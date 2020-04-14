@@ -72,16 +72,16 @@ namespace APBD_zad2
                             //dodanie studenta
                             Student studentNew = new Student();
                             Study studyNew = new Study();
-                            studyNew.Name = daneStudent[2];
-                            studyNew.Mode = daneStudent[3];
-                            studentNew.Fname = daneStudent[0];
-                            studentNew.Lname = daneStudent[1];
-                            studentNew.Study = studyNew;
-                            studentNew.Number = daneStudent[4];
-                            studentNew.Date = daneStudent[5];
-                            studentNew.Email = daneStudent[6];
-                            studentNew.NameM = daneStudent[7];
-                            studentNew.NameF = daneStudent[8];
+                            studyNew.name = daneStudent[2];
+                            studyNew.mode = daneStudent[3];
+                            studentNew.fname = daneStudent[0];
+                            studentNew.lname = daneStudent[1];
+                            studentNew.studies = studyNew;
+                            studentNew.indexNumber = daneStudent[4];
+                            studentNew.date = daneStudent[5];
+                            studentNew.email = daneStudent[6];
+                            studentNew.mothersName = daneStudent[7];
+                            studentNew.fathersName = daneStudent[8];
                             StudentList.Add(studentNew);
                         }
                     }
@@ -97,19 +97,33 @@ namespace APBD_zad2
 
             //zapisanie tych co nie wpisano:
             if (info != "")
-                File.WriteAllText(@"C:\Users\ugryz\Desktop\Log.txt", info);
+                File.WriteAllText(@".\export_xyz", info);
             //usuniecie powtorzen
-            List<Student> studentListDistinct = StudentList.GroupBy(car => new { car.Fname, car.Lname, car.Number }).Select(g => g.First()).ToList();
+            List<Student> studentListDistinct = StudentList.GroupBy(car => new { car.fname, car.lname, car.indexNumber }).Select(g => g.First()).ToList();
 
             //teraz na XML
+            Uczelnia uczelnia = new Uczelnia();
+            List<ActiveStudies> activeStudiesList = new List<ActiveStudies>();
+            var activeStudies = studentListDistinct.GroupBy(s => new { s.studies.name }).ToList();
+            foreach(var item in activeStudies)
+            {
+                ActiveStudies activeStudie = new ActiveStudies();
+                activeStudie.name = item.Key.name;
+                activeStudie.numberOfStudents = item.Count();
+                activeStudiesList.Add(activeStudie);
+            }
+            uczelnia.studenci = studentListDistinct;
+            uczelnia.activeStudies = activeStudiesList;
 
-            ConvertToXml();
+            //convert
+            ConvertToXml(uczelnia);
 
 
-            void ConvertToXml()
+
+            void ConvertToXml(Uczelnia uczelniaInfo)
             {
 
-                string xmlString = ConvertObjectToXMLString(StudentList);
+                string xmlString = ConvertObjectToXMLString(uczelniaInfo);
                 // Save C# class object into Xml file
                 XElement xElement = XElement.Parse(xmlString);
                 xElement.Save(@"C:\Users\ugryz\source\repos\NAI_3\jezyk\polski\userDetail.xml");
@@ -151,25 +165,35 @@ namespace APBD_zad2
     }
 
 
-
+    public class Uczelnia
+    {
+       public List<Student> studenci { get; set; }
+       public List<ActiveStudies> activeStudies { get; set; }
+    }
 
     public class Student
     {
-        public string Fname { get; set; }
-        public string Lname { get; set; }
-        public Study Study { get; set; }
+        public string fname { get; set; }
+        public string lname { get; set; }
+        public Study studies { get; set; }
        // public string Study { get; set; }
        // public string StudyF { get; set; }
-        public string Number { get; set; }
-        public string Date { get; set; }
-        public string Email { get; set; }
-        public string NameM { get; set; }
-        public string NameF { get; set; }
+        public string indexNumber { get; set; }
+        public string date { get; set; }
+        public string email { get; set; }
+        public string mothersName { get; set; }
+        public string fathersName { get; set; }
     }
 
         public class Study
         {
-            public string Name { get; set; }
-            public string Mode { get; set; }
+            public string name { get; set; }
+            public string mode { get; set; }
         }
+
+    public class ActiveStudies
+    {
+        public string name { get; set; }
+        public int numberOfStudents { get; set; }
+    }
 }
