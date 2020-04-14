@@ -13,9 +13,10 @@ namespace APBD_zad2
         static void Main(string[] args)
         {
             //domyslny adres
-            string addressCsv = "data.csv";
-            addressCsv = GetAddress(Console.ReadLine(), "data.csv");
-            string addressSave = GetAddress(Console.ReadLine(), "result.xml");
+            string[] addressCsv = new string[2];
+            string[] addressSave = new string[2];
+            addressCsv = GetAddress(Console.ReadLine());
+            addressSave = GetAddress(Console.ReadLine());
 
 
 
@@ -27,7 +28,7 @@ namespace APBD_zad2
             //read csv
             try
             {
-                using (var reader = new StreamReader(addressCsv))
+                using (var reader = new StreamReader(addressCsv[0]))
                 {
                     while (!reader.EndOfStream)
                     {
@@ -97,7 +98,7 @@ namespace APBD_zad2
 
             //zapisanie tych co nie wpisano:
             if (info != "")
-                File.WriteAllText(@".\export_xyz", info);
+                File.WriteAllText(addressCsv[1] + @"/log.txt", info);
             //usuniecie powtorzen
             List<Student> studentListDistinct = StudentList.GroupBy(car => new { car.fname, car.lname, car.indexNumber }).Select(g => g.First()).ToList();
 
@@ -105,28 +106,30 @@ namespace APBD_zad2
             Uczelnia uczelnia = new Uczelnia();
             List<ActiveStudies> activeStudiesList = new List<ActiveStudies>();
             var activeStudies = studentListDistinct.GroupBy(s => new { s.studies.name }).ToList();
-            foreach(var item in activeStudies)
+            foreach (var item in activeStudies)
             {
                 ActiveStudies activeStudie = new ActiveStudies();
                 activeStudie.name = item.Key.name;
                 activeStudie.numberOfStudents = item.Count();
                 activeStudiesList.Add(activeStudie);
             }
+            uczelnia.createdAt = DateTime.Now.ToString().Substring(0,10);
+            uczelnia.author = "Jan Kowalski";
             uczelnia.studenci = studentListDistinct;
             uczelnia.activeStudies = activeStudiesList;
 
             //convert
-            ConvertToXml(uczelnia);
+            ConvertToXml(uczelnia, addressSave[0]);
 
 
 
-            void ConvertToXml(Uczelnia uczelniaInfo)
+            void ConvertToXml(Uczelnia uczelniaInfo, string _addressSave)
             {
 
                 string xmlString = ConvertObjectToXMLString(uczelniaInfo);
                 // Save C# class object into Xml file
                 XElement xElement = XElement.Parse(xmlString);
-                xElement.Save(@"C:\Users\ugryz\source\repos\NAI_3\jezyk\polski\userDetail.xml");
+                xElement.Save(_addressSave);
             }
 
 
@@ -147,14 +150,24 @@ namespace APBD_zad2
             Console.ReadLine();
         }
 
-        public static string GetAddress(string getInfo, string addr)
+        public static string[] GetAddress(string getInfo)
         {
             try
             {
+                string[] info = new string[2];
                 int startAddressCsv = getInfo.IndexOf('"') + 1;
                 int endAddressCsv = getInfo.IndexOf('"', startAddressCsv + 1);
-                string addressCsv = new String(getInfo.ToCharArray(startAddressCsv, endAddressCsv - startAddressCsv));
-                return addressCsv;
+                info[0] = new string(getInfo.ToCharArray(startAddressCsv, endAddressCsv - startAddressCsv));
+                if(startAddressCsv > 1 )
+                    info[1] = new string(getInfo.ToCharArray(0, startAddressCsv-1)).Trim();
+                else
+                {
+                    var test1 = endAddressCsv - startAddressCsv;
+                    var test = getInfo.Length;
+                    var test2 = getInfo;
+                    info[1] = new string(getInfo.Substring(getInfo.Length-3, 3)).Trim();
+                }
+                return info;
             }
             catch (ArgumentOutOfRangeException e)
             {
@@ -167,8 +180,10 @@ namespace APBD_zad2
 
     public class Uczelnia
     {
-       public List<Student> studenci { get; set; }
-       public List<ActiveStudies> activeStudies { get; set; }
+        public string createdAt { get; set; }
+        public string author { get; set; }
+        public List<Student> studenci { get; set; }
+        public List<ActiveStudies> activeStudies { get; set; }
     }
 
     public class Student
@@ -176,8 +191,6 @@ namespace APBD_zad2
         public string fname { get; set; }
         public string lname { get; set; }
         public Study studies { get; set; }
-       // public string Study { get; set; }
-       // public string StudyF { get; set; }
         public string indexNumber { get; set; }
         public string date { get; set; }
         public string email { get; set; }
@@ -185,11 +198,11 @@ namespace APBD_zad2
         public string fathersName { get; set; }
     }
 
-        public class Study
-        {
-            public string name { get; set; }
-            public string mode { get; set; }
-        }
+    public class Study
+    {
+        public string name { get; set; }
+        public string mode { get; set; }
+    }
 
     public class ActiveStudies
     {
